@@ -1,6 +1,10 @@
 import sys
 from openai import OpenAI
 
+## Configs
+# Texts shorter than this will be returned as a single line
+SINGLE_LINE_THRESHOLD = 250
+
 client = OpenAI(
     base_url="http://localhost:11434/v1",
     api_key="your-api-key-here"
@@ -43,7 +47,7 @@ def remove_common_hallucinations(text):
 
 
 def clear_newlines_from_short_transcript(input_text):
-    if input_text.count("\n") < 60:
+    if input_text.count("\n") > SINGLE_LINE_THRESHOLD:
         return input_text
     return input_text.replace("\n", " ")
 
