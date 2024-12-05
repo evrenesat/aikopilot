@@ -1,5 +1,5 @@
 import sys
-from openai import OpenAI
+from openai import  OpenAI
 
 ## Configs
 # Texts shorter than this will be returned as a single line
@@ -24,6 +24,8 @@ replacements = {
 }
 flags = {
     "fix grammar": "fix_grammar",
+    "do not fix, no AI processing": "no_ai_processing",
+    "no post processing, raw text": "no_post_processing"
 }
 
 flag_prompt = {
@@ -32,12 +34,14 @@ flag_prompt = {
 
 
 def extract_flags(input_text):
-    flags_dict = {}
+    flags_found = []
+    text = input_text.strip().lower().replace(",", "").replace(".", "").replace("?", "").replace("-", "")
     for flag_text, flag in flags.items():
-        if flag_text in input_text:
-            flags_dict[flag] = True
-            input_text = input_text.replace(flag_text, "")
-    return flags_dict, input_text
+        for flag_word in flag_text.split(","):
+            if flag_word.strip() in text:
+                flags_found.append(flag)
+                input_text = input_text.replace(flag_word.strip(), "")
+    return flags_found, input_text
 
 
 def remove_common_hallucinations(text):
@@ -53,6 +57,8 @@ def clear_newlines_from_short_transcript(input_text):
 
 
 def process_with_ai(input_text, flags):
+    if "no_ai_processing" in flags:
+        return input_text
     # call openai api to fix possible typos
     prompt = ("Following text output of dictation, most likely in the context of programming."
               "Correct possible typos or out of context hallucinations that might be added to end of the text"
@@ -79,9 +85,11 @@ def process_with_ai(input_text, flags):
 
 
 def process_text(input_text):
+    flags, processed_text = extract_flags(input_text)
+    if "no_post_processing" in flags:
+        return processed_text
     processed_text = remove_common_hallucinations(input_text)
     processed_text = clear_newlines_from_short_transcript(processed_text)
-    flags, processed_text = extract_flags(processed_text)
     processed_text = process_with_ai(processed_text, flags)
     return processed_text
 
